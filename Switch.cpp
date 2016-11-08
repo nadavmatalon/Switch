@@ -6,24 +6,23 @@ as published by the Free Software Foundation, either version 3 of the License, o
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License at http://www.gnu.org/licenses .
 
-Version 20-4-2013
-_debounceDelay=50
-Version 22-5-2013
-Added longPress, doubleClick
+Version 20-4-2013:          _debounceDelay=50
+Version 22-5-2013:          Added longPress, doubleClick
+Version 2.3.0 (8-11-2016):  refactoring & stylistic modifications
 
                         _______________________      _false
                        |                       |   || |
  input                 |                       || ||| |
-                  _____|                       ||_||| ||____________
+                  _____|                       ||_||| ||_______________
 
  poll                   ^                        ^   ^          ^
- switchedTime           ^                        ^
+_switchedTime           ^                        ^
                          <---------100ms--------><--->
- debounceDelay           <----50ms---->          <----50ms---->
- switched               1                        1   0          0
+_debounceDelay           <----50ms---->          <----50ms---->
+_switched               1                        1   0          0
  newlevel               1                        0   1          0
                          ________________________
- level             _____|                        |___________________
+_level             _____|                        |_____________________
 
 .......................................................................
                             _______________________             _______
@@ -31,88 +30,67 @@ Added longPress, doubleClick
  input                     |                       |           |
                    ________|                       |___________|
 
- longPressDelay             <----------->
+_longPressDelay             <----------->
 
- doubleClickDelay           <-------------------------------------->
+_doubleClickDelay           <-------------------------------------->
                                           _________
- longPressLatch    ______________________|         |_________________
+_longPressLatch    ______________________|         |_________________
                                           _
- _longPress        ______________________| |__________________________
+_longPress         ______________________| |__________________________
                                                                 _
 _doubleClick       ____________________________________________| |____
 
 */
 
-#if ARDUINO >= 100
-    #include "Arduino.h"
-#else
-    #include "WProgram.h"
-#endif
-
 #include "Switch.h"
 
-// level(0)
-Switch::Switch(byte _pin, byte PinMode, bool polarity, int debounceDelay, int longPressDelay, int doubleClickDelay):
-pin(_pin), polarity(polarity), debounceDelay(debounceDelay), longPressDelay(longPressDelay), doubleClickDelay(doubleClickDelay)
-{
-    pinMode(pin, PinMode);
+Switch::Switch(byte pin, byte PinMode, bool polarity, unsigned int debounceDelay, unsigned int longPressDelay, unsigned int doubleClickDelay): _pin(pin), _polarity(polarity), _debounceDelay(debounceDelay), _longPressDelay(longPressDelay), _doubleClickDelay(doubleClickDelay) {
+    pinMode(_pin, PinMode);
     _switchedTime = millis();
-    level = digitalRead(pin);
+    _switched = false;
+    _longPress = false;
+    _longPressLatch = false;
+    _doubleClick = false;
+    _level = digitalRead(_pin);
 }
 
-bool Switch::poll()
-{
+bool Switch::poll() {
     _longPress = _doubleClick = false;
-    bool newlevel = digitalRead(pin);
-    if(!longPressLatch)
-    {
-        _longPress = on() && ((long)(millis() - pushedTime) > longPressDelay);  // true just one time between polls
-        longPressLatch = _longPress;                                            // will be reset at next switch
+    bool newlevel = digitalRead(_pin);
+    if (!_longPressLatch) {
+        _longPress = on() && ((long)(millis() - _pushedTime) > _longPressDelay);   // true just one time between polls
+        _longPressLatch = _longPress;                                              // resets at next switch
     }
-
-    if((newlevel != level) & (millis() - _switchedTime >= debounceDelay))
-    {
+    if ((newlevel != _level) & (millis() - _switchedTime >= _debounceDelay)) {
         _switchedTime = millis();
-        level = newlevel;
-        _switched = 1;
-        longPressLatch = false;
-      
-        if(pushed())
-        {
-            _doubleClick = (long)(millis() - pushedTime) < doubleClickDelay;
-            pushedTime = millis();
+        _level = newlevel;
+        _switched = true;
+        _longPressLatch = false;
+        if (pushed()) {
+            _doubleClick = (long)(millis() - _pushedTime) < _doubleClickDelay;
+            _pushedTime = millis();
         }
         return _switched;
     }
-    return _switched = 0;
+    return _switched = false;
 }
 
-bool Switch::switched()
-{
-    return _switched;
+bool Switch::on() {
+    return !(_level^_polarity);
 }
 
-bool Switch::on()
-{
-    return !(level^polarity);
+bool Switch::pushed() {
+    return _switched && !(_level^_polarity);
 }
 
-bool Switch::pushed()
-{
-    return _switched && !(level^polarity);
+bool Switch::released() {
+    return _switched && (_level^_polarity);
 }
 
-bool Switch::released()
-{
-    return _switched && (level^polarity);
-}
-
-bool Switch::longPress()
-{
+bool Switch::longPress() {
     return _longPress;
 }
 
-bool Switch::doubleClick()
-{
+bool Switch::doubleClick() {
     return _doubleClick;
 }
