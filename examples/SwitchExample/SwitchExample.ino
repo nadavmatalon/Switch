@@ -1,30 +1,50 @@
 #include <Streaming.h>
 #include "Switch.h"
 
-const byte toggleSwitchpin = 3;                                     // (right button)
-const byte buttonGNDpin    = 4;                                     // (left button)
-const byte ButtonVCCpin    = 6;
-const byte Button10mspin   = 8;
-int i = 0;
+const byte toggleGndPin = 3;
+const byte toggleVccPin = 5;
+const byte buttonGndPin = 7;                                     
+const byte buttonVccPin = 9;
 
-Switch buttonGND    = Switch(buttonGNDpin);                         // button to GND, using internal 20K pull-up resistor
-Switch toggleSwitch = Switch(toggleSwitchpin);
-Switch buttonVCC    = Switch(ButtonVCCpin, INPUT, HIGH);            // button to VCC, 10k pull-down resistor, no internal pull-up resistor, HIGH polarity
-Switch button10ms   = Switch(Button10mspin, INPUT_PULLUP, LOW, 1);  // debounceTime: 1ms
+byte toggleGndLastState;
+byte toggleVccLastState;
+byte buttonGndPressCounter = 0;
+byte buttonVccPressCounter = 0;
 
-void setup() { 
+Switch toggleGnd(toggleGndPin);
+Switch toggleVcc(toggleVccPin, INPUT, POLARITY_HIGH);
+Switch buttonGnd(buttonGndPin);
+Switch buttonVcc(buttonVccPin, INPUT, POLARITY_HIGH);            // button to VCC, 10k pull-down resistor, no internal pull-up resistor, HIGH polarity
+
+void setup() {
     Serial.begin(9600);
+    toggleGnd.poll();
+    toggleGndLastState = toggleGnd.state();
+    toggleVcc.poll();
+    toggleVccLastState = toggleVcc.state();
 }
 
-void loop() { 
-    buttonGND.poll();
-    Serial << (buttonGND.on() ? "on" : "off");
-    if (buttonGND.switched())       Serial << "switched ";   
-    if (buttonGND.pushed())         Serial << "pushed " << ++i << " ";
-    if (buttonGND.released())       Serial << "released\n";
-    if (toggleSwitch.poll())        Serial << toggleSwitch.on() << endl;
-    if (toggleSwitch.longPress())   Serial << "longPress1 ";
-    if (toggleSwitch.longPress())   Serial << "longPress2\n";
-    if (toggleSwitch.doubleClick()) Serial << "doubleClick1 ";
-    if (toggleSwitch.doubleClick()) Serial << "doubleClick2\n";
+void loop() {
+    toggleGnd.poll();
+    if (toggleGnd.state() != toggleGndLastState) {
+        Serial << "toggleGnd " << (toggleGnd.state() ? "on\n" : "off\n");
+        toggleGndLastState = toggleGnd.state();
+    }
+    toggleVcc.poll();
+    if (toggleVcc.state() != toggleVccLastState) {
+        Serial << "toggleVcc " << (toggleVcc.state() ? "on\n" : "off\n");
+        toggleVccLastState = toggleVcc.state();
+    }
+    buttonGnd.poll();
+    if (buttonGnd.pushed())      Serial << "buttonGnd pushed (" << buttonGndPressCounter++ << ")\n";
+    if (buttonGnd.released())    Serial << "buttonGnd released\n";
+    if (buttonGnd.longPress())   Serial << "buttonGnd longPress\n";
+    if (buttonGnd.doubleClick()) Serial << "buttonGnd doubleClick\n";  
+    buttonVcc.poll();
+    if (buttonVcc.pushed())      Serial << "buttonVcc pushed (" << buttonVccPressCounter++ << ")\n";
+    if (buttonVcc.released())    Serial << "buttonVcc released\n";
+    if (buttonVcc.longPress())   Serial << "buttonVcc longPress\n";
+    if (buttonVcc.doubleClick()) Serial << "buttonVcc doubleClick\n";
 }
+
+//<< endl
