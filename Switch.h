@@ -76,6 +76,10 @@ Version 2.3.0 (8-11-2016):  refactoring & stylistic modifications
 
 */
 
+#if 1
+__asm volatile ("nop");
+#endif
+
 #ifndef SWITCH_H
 #define SWITCH_H
 
@@ -87,41 +91,51 @@ Version 2.3.0 (8-11-2016):  refactoring & stylistic modifications
 
 namespace SwitchLibrary {
 
-    const byte         PINMODE_DEFAULT     =  INPUT_PULLUP;
-    const bool         POLARITY_DEFAULT    =  LOW;
-    const unsigned int DEGLITCH_PERIOD     =   10;
-    const unsigned int DEBOUNCE_PERIOD     =   50;
-    const unsigned int LONG_PRESS_PERIOD   =  300;
-    const unsigned int DOUBLE_CLICK_PERIOD =  250;
+    typedef enum:byte {
+        OFF = 0,
+        ON  = 1
+    } state_t;
+    
+    typedef enum:byte {
+        POLARITY_LOW  = 0,
+        POLARITY_HIGH = 1
+    } polarity_t;
+    
+    const byte         DEFAULT_PIN_MODE     =  INPUT_PULLUP;
+    const byte         DEFAULT_POLARITY     =  POLARITY_LOW;
+    const byte         DEFAULT_DEGLITCH     =   10;
+    const byte         DEFAULT_DEBOUNCE     =   50;
+    const unsigned int DEFAULT_LONG_PRESS   =  300;
+    const unsigned int DEFAULT_DOUBLE_CLICK =  250;
 
     class Switch {
         public:
-            Switch(byte pin,
-                   byte PinMode                   = PINMODE_DEFAULT,
-                   bool polarity                  = POLARITY_DEFAULT,
-                   unsigned int deglitchPeriod    = DEGLITCH_PERIOD,
-                   unsigned int debouncePeriod    = DEBOUNCE_PERIOD,
-                   unsigned int longPressPeriod   = LONG_PRESS_PERIOD,
-                   unsigned int doubleClickPeriod = DOUBLE_CLICK_PERIOD);
-//            ~Switch();
-            bool poll();                                  // 0 = switched off / 1 = switched on
-            bool switched();                              // refreshed by poll()
-            bool on();                                    // refreshed by poll()
-            bool pushed();                                // refreshed by poll()
-            bool released();                              // refreshed by poll()
-            bool longPress();                             // refreshed by poll()
-            bool doubleClick();                           // refreshed by poll()
+            Switch(
+                byte pin,
+                byte PinMode                   = DEFAULT_PIN_MODE,
+                polarity_t polarity            = DEFAULT_POLARITY,
+                unsigned int deglitchPeriod    = DEFAULT_DEGLITCH,
+                unsigned int debouncePeriod    = DEFAULT_DEBOUNCE,
+                unsigned int longPressPeriod   = DEFAULT_LONG_PRESS,
+                unsigned int doubleClickPeriod = DEFAULT_DOUBLE_CLICK
+            );
+            ~Switch();
+            void poll();                                  // 0 = switched off / 1 = switched on
+            byte state();                                 // refreshed by poll()
+            byte pushed();                                // refreshed by poll()
+            byte released();                              // refreshed by poll()
+            byte longPress();                             // refreshed by poll()
+            byte doubleClick();                           // refreshed by poll()
         private:
-            bool process();
             void inline deglitch();
             void inline debounce();
             void inline calcLongPress();
             void inline calcDoubleClick();
-            const byte  _pin;
-            const bool  _polarity;
+            byte on();
+            const byte  _pin, _polarity;
             const unsigned int _deglitchPeriod, _debouncePeriod, _longPressPeriod, _doubleClickPeriod;
-            bool  _input, _lastInput, _equal, _deglitched, _debounced, _switched, _longPress, _longPressDisable, _doubleClick;
-            unsigned long _deglitchTime, _switchedTime, _pushedTime, _ms;
+            byte  _state, _input, _lastInput, _equal, _deglitched, _debounced, _longPress, _longPressDisable, _doubleClick;
+            unsigned long  _ms, _deglitchTime, _switchedTime, _pushedTime;
     };
 }
 

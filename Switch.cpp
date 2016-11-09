@@ -14,11 +14,15 @@ Version 2.3.0 (8-11-2016):  refactoring & stylistic modifications
 
 */
 
+#if 1
+__asm volatile ("nop");
+#endif
+
 #include "Switch.h"
 
 Switch::Switch(byte         pin,
                byte         PinMode,
-               bool         polarity,
+               polarity_t    polarity,
                unsigned int deglitchPeriod,
                unsigned int debouncePeriod,
                unsigned int longPressPeriod,
@@ -28,52 +32,73 @@ Switch::Switch(byte         pin,
                _deglitchPeriod(deglitchPeriod),
                _debouncePeriod(debouncePeriod),
                _longPressPeriod(longPressPeriod),
-               _doubleClickPeriod(doubleClickPeriod) {
+               _doubleClickPeriod(doubleClickPeriod)
+               {
                    pinMode(_pin, PinMode);
                    _switchedTime = millis();
+                   _deglitchTime = 0;
+                   _pushedTime = 0;
                    _debounced = digitalRead(_pin);
-}
+                   poll();
+               }
 
-bool Switch::poll() {
+Switch::~Switch() {};
+
+void Switch::poll() {
     _input = digitalRead(_pin);
-    return process();
-}
-
-bool Switch::process() {
     deglitch();
     debounce();
     calcLongPress();
     calcDoubleClick();
-    return _switched;
+}
+
+byte Switch::state() {
+    return _state;
+}
+
+byte Switch::pushed() {
+    return (_state && !(_debounced ^ _polarity));
+}
+
+byte Switch::released() {
+    return (_state && (_debounced ^ _polarity));
+}
+
+byte Switch::longPress() {
+    return _longPress;
+}
+
+byte Switch::doubleClick() {
+    return _doubleClick;
 }
 
 void inline Switch::deglitch() {
     _ms = millis();
-    if (_input == _lastInput) _equal = true;
+    if (_input == _lastInput) _equal = 1;
     else {
-        _equal = false;
+        _equal = 0;
         _deglitchTime = _ms;
     }
     if (_equal & ((_ms - _deglitchTime) > _deglitchPeriod)) {                  // max 50ms, disable deglitch: 0ms
-        _deglitched = _input;
         _deglitchTime = _ms;
+        _deglitched = _input;
     }
     _lastInput = _input;
 }
 
 void inline Switch::debounce() {
     _ms = millis();
-    _switched = false;
+    _state = OFF;
     if ((_deglitched != _debounced) & ((_ms - _switchedTime) >= _debouncePeriod)) {
         _switchedTime = _ms;
         _debounced = _deglitched;
-        _switched = true;
-        _longPressDisable = false;
+        _state = ON;
+        _longPressDisable = OFF;
     }
 }
 
 void inline Switch::calcLongPress() {
-    _longPress = false;
+    _longPress = OFF;
     if (!_longPressDisable) {
         _longPress = (on() && ((_ms - _pushedTime) > _longPressPeriod));       // true just one time between polls
         _longPressDisable = _longPress;                                        // will be reset at next switch
@@ -81,33 +106,13 @@ void inline Switch::calcLongPress() {
 }
 
 void inline Switch::calcDoubleClick() {
-    _doubleClick = false;
+    _doubleClick = OFF;
     if (pushed()) {
-        _doubleClick = (_ms - _pushedTime) < _doubleClickPeriod;               // pushedTime of previous push
+        _doubleClick = ((_ms - _pushedTime) < _doubleClickPeriod);             // pushedTime of previous push
         _pushedTime = _ms;
     }
 }
 
-bool Switch::switched() {
-    return _switched;
-}
-
-bool Switch::on() {
+byte Switch::on() {
     return !(_debounced ^ _polarity);
-}
-
-bool Switch::pushed() {
-    return (_switched && !(_debounced ^ _polarity));
-}
-
-bool Switch::released() {
-    return (_switched && (_debounced ^ _polarity));
-}
-
-bool Switch::longPress() {
-    return _longPress;
-}
-
-bool Switch::doubleClick() {
-    return _doubleClick;
 }
