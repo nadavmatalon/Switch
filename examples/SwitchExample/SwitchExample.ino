@@ -19,11 +19,12 @@ void setup() {
 void loop() { 
     buttonGND.poll();
     Serial << (buttonGND.on() ? "on" : "off");
-    if (buttonGND.pushed()) Serial << "pushed " << ++i << " ";
-    if (buttonGND.released()) Serial << "released\n";
-    if (toggleSwitch.poll()) Serial << toggleSwitch.on() << endl;
-    if (toggleSwitch.longPress()) Serial << "longPress1 ";
-    if (toggleSwitch.longPress()) Serial << "longPress2\n";
+    if (buttonGND.switched())       Serial << "switched ";   
+    if (buttonGND.pushed())         Serial << "pushed " << ++i << " ";
+    if (buttonGND.released())       Serial << "released\n";
+    if (toggleSwitch.poll())        Serial << toggleSwitch.on() << endl;
+    if (toggleSwitch.longPress())   Serial << "longPress1 ";
+    if (toggleSwitch.longPress())   Serial << "longPress2\n";
     if (toggleSwitch.doubleClick()) Serial << "doubleClick1 ";
     if (toggleSwitch.doubleClick()) Serial << "doubleClick2\n";
 }
