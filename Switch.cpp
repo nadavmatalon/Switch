@@ -22,7 +22,7 @@ __asm volatile ("nop");
 
 Switch::Switch(byte         pin,
                byte         PinMode,
-               polarity_t    polarity,
+               polarity_t   polarity,
                unsigned int deglitchPeriod,
                unsigned int debouncePeriod,
                unsigned int longPressPeriod,
