@@ -1,5 +1,11 @@
 # Switch library
 
+[![Platform Badge](https://img.shields.io/badge/platform-AVR-orange.svg)](http://www.atmel.com/products/microcontrollers/avr/)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[![SemVer](https://img.shields.io/badge/SemVer-2.3.0-brightgreen.svg)](http://semver.org/)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[![GNU License](https://img.shields.io/badge/license-GNU-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
 Copyright (C) 2012  Albert van Dalen <http://www.avdweb.nl>
 
 For more information see: <http://www.avdweb.nl/arduino/hardware-interfacing/simple-switch-debouncer.html>
